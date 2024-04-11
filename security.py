@@ -1,1 +1,3 @@
 api_key = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.ImRjOWVhMzBjYjU1MGMxNmI4MTk0YjRkZjMzZjYzYTE3NDc0YjAxZWMi.Wnk4T4fag6nVI4iCI9bHB47RfgVuoKbANGRwhFIWT5E"
+pubmed_user = 'performis'
+pubmed_pass = 'mumTCcDT'
