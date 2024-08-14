@@ -1,19 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[34]:
+# In[19]:
 
 
-from security import api_key
+from dotenv import dotenv_values
 
 import requests
 import json
 import pandas as pd
 import sys
 import os
+import pysftp
+
+security = dotenv_values(".env")
+api_key = security.get('api_key')
+pubmed_user = security.get('pubmed_user')
+pubmed_pass = security.get('pubmed_pass')
 
 
-# In[5]:
+# In[20]:
+
+
+pubmed_pass
+
+
+# In[23]:
 
 
 import xml.etree.ElementTree as ET
@@ -46,7 +58,7 @@ def add_article_title(xml_string, ATitle):
     return modified_xml
 
 
-# In[7]:
+# In[24]:
 
 
 def get_vernacular_title(xml_string):
@@ -85,7 +97,7 @@ def read_xml_file(file_path):
 
 def retrieve_english_title(journaltitle, vernacular_title, api_key):
     response = requests.get("https://platform.openjournals.nl/"+journaltitle+"/api/v1/submissions/?apiToken="+api_key+"&status=3&searchPhrase="+vernacular_title)
-    return response.json()['items'][0]['publications'][0]['fullTitle']['en_US']
+    return response.json()['items'][0]['publications'][0]['fullTitle']['en']
 
 
 # In[29]:
@@ -122,6 +134,13 @@ def process_all_xml_files(input_folder, output_folder, journaltitle):
             # Write the modified XML string to the output file
             with open(output_path, 'w', encoding='utf-8') as file:
                 file.write(modified_xml_string)
+
+
+# In[ ]:
+
+
+def sftp_upload():
+    sftp = pysftp.Connection('ftp-private.ncbi.nlm.nih.gov', username=pubmed_user, password=pubmed_pass)
 
 
 # In[32]:
