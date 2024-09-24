@@ -17,8 +17,16 @@ import pysftp
 
 security = dotenv_values(".env")
 api_key = security.get('api_key')
+journal_title = security.get('journal_title')
+journal_abbreviation = security.get('journal_abbreviation')
 pubmed_user = security.get('pubmed_user')
 pubmed_pass = security.get('pubmed_pass')
+
+
+# In[ ]:
+
+
+
 
 
 # In[2]:
@@ -170,6 +178,22 @@ def replace_language_tag(xml_string):
     return ET.tostring(root, encoding='unicode')
 
 
+# In[ ]:
+
+
+def replace_journal_title(xml_string, journal_abbreviation):
+    # Parse the XML string
+    root = ET.fromstring(xml_string)
+
+    # Find the JournalTitle element and set its text to journal_abbreviation
+    journal_title = root.find('.//JournalTitle')
+    if journal_title is not None:
+        journal_title.text = journal_abbreviation
+
+    # Convert the XML tree back to a string
+    return ET.tostring(root, encoding='unicode')
+
+
 # In[4]:
 
 
@@ -214,6 +238,9 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     
     # Add the English article title to the XML
     modified_xml = add_article_title(xml_string, english_title)
+    
+    #replace the journal title with whatever Pubmed requires
+    modified_xml = replace_journal_title(modified_xml, journal_abbreviation)
     
     # Replace the language tag in the modified XML
     modified_xml = replace_language_tag(modified_xml)
@@ -260,7 +287,7 @@ def process_all_xml_files(input_folder, output_folder, journaltitle, api_key):
 
 
 def main():
-    journaltitle = input("What is the journal title? ")
+    journaltitle = journal_title
     process_all_xml_files('input', 'output', journaltitle, api_key)
 
 
