@@ -2,3 +2,4 @@
 *.xml
 security.py
 *.env
+json.txt
