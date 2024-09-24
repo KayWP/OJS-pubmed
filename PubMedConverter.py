@@ -51,6 +51,91 @@ def add_article_title(xml_string, ATitle):
     return ET.tostring(root, encoding='unicode')
 
 
+# In[19]:
+
+
+def add_article_id_list(xml_string):
+    # Parse the input XML string
+    root = ET.fromstring(xml_string)
+    
+    # Find the AuthorList node
+    author_list = root.find(".//AuthorList")
+    
+    # Find the DOI under ELocationID
+    doi_node = root.find(".//ELocationID[@EIdType='doi']")
+    doi_value = doi_node.text if doi_node is not None else None
+    
+    # Create the ArticleIdList element
+    article_id_list = ET.Element("ArticleIdList")
+    
+    if doi_value:
+        # Create the ArticleId element
+        article_id = ET.Element("ArticleId", IdType="doi")
+        article_id.text = doi_value
+        
+        # Append the ArticleId element to the ArticleIdList
+        article_id_list.append(article_id)
+    
+    # We need to manually find the parent of the AuthorList node
+    # This is necessary because ElementTree doesn't support getparent()
+    def find_parent(root, child):
+        # Traverse through all elements
+        for parent in root.iter():
+            # Look for child within this parent
+            if child in list(parent):
+                return parent
+        return None
+    
+    parent = find_parent(root, author_list)
+    
+    # Insert the ArticleIdList node after the AuthorList node
+    if parent is not None and author_list is not None:
+        # Get the index of the AuthorList and insert the ArticleIdList after it
+        index = list(parent).index(author_list)
+        parent.insert(index + 1, article_id_list)
+    
+    # Convert the modified XML tree back into a string
+    return ET.tostring(root, encoding='unicode')
+
+
+# In[18]:
+
+
+def add_publication_type(xml_string):
+    # Parse the input XML string
+    root = ET.fromstring(xml_string)
+    
+    # Find the AuthorList node
+    author_list = root.find(".//AuthorList")
+    
+    # Find the ArticleIdList node
+    article_id_list = root.find(".//ArticleIdList")
+    
+    # Create a new PublicationType element
+    publication_type = ET.Element("PublicationType")
+    publication_type.text = "Journal Article"
+    
+    # We need to manually find the parent of the ArticleIdList node
+    def find_parent(root, child):
+        # Traverse through all elements
+        for parent in root.iter():
+            # Look for child within this parent
+            if child in list(parent):
+                return parent
+        return None
+    
+    parent = find_parent(root, article_id_list)
+    
+    # Insert the PublicationType node after the AuthorList and before ArticleIdList
+    if parent is not None and author_list is not None and article_id_list is not None:
+        # Get the index of the ArticleIdList and insert the PublicationType before it
+        index = list(parent).index(article_id_list)
+        parent.insert(index, publication_type)
+    
+    # Convert the modified XML tree back into a string
+    return ET.tostring(root, encoding='unicode')
+
+
 # In[3]:
 
 
@@ -132,6 +217,12 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     
     # Replace the language tag in the modified XML
     modified_xml = replace_language_tag(modified_xml)
+    
+    #add article id
+    modified_xml = add_article_id_list(modified_xml)
+    
+    #add 'publication type'
+    modified_xml = add_publication_type(modified_xml)
     
     # Convert the modified XML back to a string
     output = ET.tostring(ET.fromstring(modified_xml), encoding="unicode")
