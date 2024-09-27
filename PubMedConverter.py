@@ -5,6 +5,7 @@
 
 
 from dotenv import dotenv_values
+from bs4 import BeautifulSoup
 
 import xml.etree.ElementTree as ET
 
@@ -22,10 +23,107 @@ pubmed_user = security.get('pubmed_user')
 pubmed_pass = security.get('pubmed_pass')
 
 
-# In[ ]:
+# In[6]:
 
 
+def get_dc_subjects(xml_string):
+    """
+    Fetches and returns all DC.Subject metadata from an OJS article page.
 
+    Args:
+        url (str): The URL of the OJS article.
+
+    Returns:
+        list: A list of DC.Subject metadata values, or an empty list if none are found.
+    """
+    try:
+        
+        # Parse the input XML string
+        root = ET.fromstring(xml_string)
+
+        # Find the DOI under ELocationID
+        doi_node = root.find(".//ELocationID[@EIdType='doi']")
+        doi_value = doi_node.text if doi_node is not None else None
+        
+        # Send a request to fetch the article page
+        response = requests.get("https://doi.org/" + doi_value)
+
+        # Check if the request was successful
+        if response.status_code != 200:
+            print(f"Failed to fetch the page. Status code: {response.status_code}")
+            return []
+
+        # Parse the page content with BeautifulSoup
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find all DC.Subject meta tags
+        dc_subjects = soup.find_all("meta", {"name": "DC.Subject"})
+
+        # Extract the content of each DC.Subject meta tag
+        subject_list = [subject.get("content") for subject in dc_subjects if subject.get("content")]
+
+        if subject_list:
+            return subject_list
+        else:
+            print("No DC.Subject metadata found")
+            return []
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
+
+# In[8]:
+
+
+def insert_keywords_after_abstract(xml_content, keywords):
+    """
+    Inserts a list of keywords into an XML string after the <Abstract> node, 
+    formatted as an <ObjectList> with <Object Type="keyword"> elements.
+
+    Args:
+        xml_content (str): The original XML content as a string.
+        keywords (list): A list of keywords to insert.
+
+    Returns:
+        str: The modified XML content as a string.
+    """
+    try:
+        # Parse the XML content
+        root = ET.fromstring(xml_content)
+
+        # Find the <Abstract> node
+        abstract_node = root.find('.//Abstract')
+        if abstract_node is None:
+            raise ValueError("No <Abstract> node found in the XML")
+
+        # Create <ObjectList> element
+        object_list = ET.Element('ObjectList')
+
+        # Add each keyword as an <Object Type="keyword">
+        for keyword in keywords:
+            object_element = ET.Element('Object', Type='keyword')
+            param_element = ET.Element('Param', Name='value')
+            param_element.text = keyword  # Set the keyword as text inside <Param>
+            object_element.append(param_element)
+            object_list.append(object_element)
+
+        # Insert the <ObjectList> element after the <Abstract> node
+        abstract_index = list(root).index(abstract_node)
+        root.insert(abstract_index + 1, object_list)
+
+        # Return the modified XML as a string
+        return ET.tostring(root, encoding='unicode')
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+# In[9]:
+
+
+get_dc_subjects("https://doi.org/10.54195/tgg18688")
 
 
 # In[2]:
@@ -253,6 +351,12 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     
     #add 'publication type'
     modified_xml = add_publication_type(modified_xml)
+    
+    #get a list of keywords
+    keywords = get_dc_subjects(modified_xml)
+    
+    #get and add the authorkeywords using beautiful soup
+    modified_xml = insert_keywords_after_abstract(modified_xml, keywords)
     
     # Convert the modified XML back to a string
     output = ET.tostring(ET.fromstring(modified_xml), encoding="unicode")
