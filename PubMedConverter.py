@@ -26,7 +26,7 @@ pubmed_pass = security.get('pubmed_pass')
 # In[6]:
 
 
-def get_dc_subjects(xml_string):
+def get_dc_subjects(url_published):
     """
     Fetches and returns all DC.Subject metadata from an OJS article page.
 
@@ -38,15 +38,8 @@ def get_dc_subjects(xml_string):
     """
     try:
         
-        # Parse the input XML string
-        root = ET.fromstring(xml_string)
-
-        # Find the DOI under ELocationID
-        doi_node = root.find(".//ELocationID[@EIdType='doi']")
-        doi_value = doi_node.text if doi_node is not None else None
-        
         # Send a request to fetch the article page
-        response = requests.get("https://doi.org/" + doi_value)
+        response = requests.get(url_published)
 
         # Check if the request was successful
         if response.status_code != 200:
@@ -108,9 +101,13 @@ def insert_keywords_after_abstract(xml_content, keywords):
             object_element.append(param_element)
             object_list.append(object_element)
 
+        # Find the parent of the <Abstract> node (this should be the <Article>)
+        article_element = abstract_node.getparent() if hasattr(abstract_node, 'getparent') else None
+
         # Insert the <ObjectList> element after the <Abstract> node
-        abstract_index = list(root).index(abstract_node)
-        root.insert(abstract_index + 1, object_list)
+        parent_node = root.find('.//Abstract/..')  # Find parent of Abstract
+        abstract_index = list(parent_node).index(abstract_node)
+        parent_node.insert(abstract_index + 1, object_list)
 
         # Return the modified XML as a string
         return ET.tostring(root, encoding='unicode')
@@ -118,12 +115,6 @@ def insert_keywords_after_abstract(xml_content, keywords):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-
-# In[9]:
-
-
-get_dc_subjects("https://doi.org/10.54195/tgg18688")
 
 
 # In[2]:
@@ -310,20 +301,31 @@ def read_xml_file(file_path):
 # In[5]:
 
 
-def retrieve_english_title(journaltitle, vernacular_title, api_key):
-    response = requests.get("https://platform.openjournals.nl/"+journaltitle+"/api/v1/submissions/?apiToken="+api_key+"&status=3&count=100&searchPhrase="+vernacular_title)
-    
+import requests
+
+def retrieve_json_info(journaltitle, vernacular_title, api_key):
+    response = requests.get(f"https://platform.openjournals.nl/{journaltitle}/api/v1/submissions/?apiToken={api_key}&status=3&count=100&searchPhrase={vernacular_title}")
     response_data = response.json()
 
-    # Assuming 'response_data' is your JSON data
-    for item in response_data['items']:  # Iterate over each item in 'items'
-        for publication in item['publications']:  # Iterate over each publication in 'publications'
-            title = publication.get('title')  # Get 'fullTitle'
-            if vernacular_title == title['nl']:  # Test if 'fullTitle' exists
-                output = title['en']
+    # Initialize output variables
+    output = None
+    url_published = None
 
-        
-    return output
+    # Iterate over items in response
+    for item in response_data['items']:
+        for publication in item['publications']:
+            title = publication.get('title')
+            if vernacular_title == title['nl']:  # Check for matching vernacular title
+                output = title.get('en')  # Get English title
+
+                # Get the correct urlPublished from the submission level
+                url_published = item.get('urlPublished')  # Retrieve 'urlPublished' at the submission level
+
+                # Once found, return both the English title and the submission-level URL
+                return output, url_published
+    
+    # Return the output and URL (None if not found)
+    return output, url_published
 
 
 # In[6]:
@@ -334,8 +336,9 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     vernacular_title = get_vernacular_title(xml_string)
     
     # Retrieve the English title based on the vernacular title and journal title
-    english_title = retrieve_english_title(journaltitle, vernacular_title, api_key)
+    english_title, url_published = retrieve_json_info(journaltitle, vernacular_title, api_key)
     print(english_title)
+    print(url_published)
     
     # Add the English article title to the XML
     modified_xml = add_article_title(xml_string, english_title)
@@ -353,10 +356,13 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     modified_xml = add_publication_type(modified_xml)
     
     #get a list of keywords
-    keywords = get_dc_subjects(modified_xml)
+    keywords = get_dc_subjects(url_published)
     
     #get and add the authorkeywords using beautiful soup
     modified_xml = insert_keywords_after_abstract(modified_xml, keywords)
+    
+    #reorganize the file to comply with the new DTD
+    modified_xml = reorganize_article_xml(modified_xml)
     
     # Convert the modified XML back to a string
     output = ET.tostring(ET.fromstring(modified_xml), encoding="unicode")
@@ -388,6 +394,59 @@ def process_all_xml_files(input_folder, output_folder, journaltitle, api_key):
             # Write the modified XML string to the output file
             with open(output_path, 'w', encoding='utf-8') as file:
                 file.write(modified_xml_string)
+
+
+# In[ ]:
+
+
+def reorganize_article_xml(xml_content):
+    # Define the correct order of elements
+    element_order = [
+        'Journal',
+        'Replaces',
+        'ArticleTitle',
+        'VernacularTitle',
+        'FirstPage',
+        'LastPage',
+        'ELocationID',
+        'Language',
+        'AuthorList',
+        'GroupList',
+        'PublicationType',
+        'ArticleIdList',
+        'History',
+        'Abstract',
+        'OtherAbstract',
+        'CopyrightInformation',
+        'CoiStatement',
+        'ObjectList',
+        'ReferenceList',
+        'ArchiveCopySource'
+    ]
+
+    # Parse the XML content
+    root = ET.fromstring(xml_content)
+
+    # Iterate over each Article in the ArticleSet
+    for article in root.findall('Article'):
+        # Create a new list for the reordered elements
+        ordered_elements = []
+
+        # Append elements in the specified order
+        for elem_name in element_order:
+            element = article.find(elem_name)
+            if element is not None:
+                ordered_elements.append(element)
+
+        # Clear existing children in the Article element
+        article.clear()
+
+        # Append ordered elements back to the Article element
+        for elem in ordered_elements:
+            article.append(elem)
+
+    # Return the modified XML as a string
+    return ET.tostring(root, encoding='unicode')
 
 
 # In[32]:
