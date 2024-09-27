@@ -13,7 +13,6 @@ import json
 import pandas as pd
 import sys
 import os
-import pysftp
 
 security = dotenv_values(".env")
 api_key = security.get('api_key')
@@ -214,15 +213,19 @@ def read_xml_file(file_path):
 
 
 def retrieve_english_title(journaltitle, vernacular_title, api_key):
-    response = requests.get("https://platform.openjournals.nl/"+journaltitle+"/api/v1/submissions/?apiToken="+api_key+"&status=3&searchPhrase="+vernacular_title)
+    response = requests.get("https://platform.openjournals.nl/"+journaltitle+"/api/v1/submissions/?apiToken="+api_key+"&status=3&count=100&searchPhrase="+vernacular_title)
     
     response_data = response.json()
-    
-    # Save the JSON data to a file
-    with open('json.txt', 'w') as json_file:
-        json.dump(response_data, json_file, indent=4)  # Save in a readable format with indentation
-    
-    return response_data['items'][0]['publications'][0]['fullTitle']['en']
+
+    # Assuming 'response_data' is your JSON data
+    for item in response_data['items']:  # Iterate over each item in 'items'
+        for publication in item['publications']:  # Iterate over each publication in 'publications'
+            title = publication.get('title')  # Get 'fullTitle'
+            if vernacular_title == title['nl']:  # Test if 'fullTitle' exists
+                output = title['en']
+
+        
+    return output
 
 
 # In[6]:
