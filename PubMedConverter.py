@@ -328,6 +328,15 @@ def retrieve_json_info(journaltitle, vernacular_title, api_key):
     return output, url_published
 
 
+# In[ ]:
+
+
+def add_doctype(xml_content):
+    doctype = '<!DOCTYPE ArticleSet PUBLIC "-//NLM//DTD PubMed 2.8//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/in/PubMed.dtd">\n'
+    # Add DOCTYPE at the top of the XML content
+    return doctype + xml_content
+
+
 # In[6]:
 
 
@@ -363,7 +372,7 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     
     #reorganize the file to comply with the new DTD
     modified_xml = reorganize_article_xml(modified_xml)
-    
+       
     # Convert the modified XML back to a string
     output = ET.tostring(ET.fromstring(modified_xml), encoding="unicode")
     
@@ -390,6 +399,8 @@ def process_all_xml_files(input_folder, output_folder, journaltitle, api_key):
 
             # Rewrite the XML string
             modified_xml_string = rewrite_xml(xml_string, journaltitle, api_key)
+            
+            modified_xml_string = '<!DOCTYPE ArticleSet PUBLIC "-//NLM//DTD PubMed 2.8//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/in/PubMed.dtd">\n' + modified_xml_string
 
             # Write the modified XML string to the output file
             with open(output_path, 'w', encoding='utf-8') as file:
