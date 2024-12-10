@@ -147,6 +147,26 @@ def add_article_title(xml_string, ATitle):
     return ET.tostring(root, encoding='unicode')
 
 
+# In[ ]:
+
+
+def replace_vernacular_title(xml_string, ATitle):
+    # Parse the XML string
+    root = ET.fromstring(xml_string)
+
+    # Iterate through each Article node
+    for article_node in root.findall('.//Article'):
+        # Find the VernacularTitle node
+        vernacular_title_node = article_node.find('VernacularTitle')
+
+        if vernacular_title_node is not None:
+            # Replace the text of the VernacularTitle node with ATitle
+            vernacular_title_node.text = ATitle
+
+    # Convert the modified XML tree back to a string
+    return ET.tostring(root, encoding='unicode')
+
+
 # In[19]:
 
 
@@ -298,7 +318,7 @@ def read_xml_file(file_path):
         return None
 
 
-# In[5]:
+# In[1]:
 
 
 import requests
@@ -306,9 +326,12 @@ import requests
 def retrieve_json_info(journaltitle, vernacular_title, api_key):
     response = requests.get(f"https://platform.openjournals.nl/{journaltitle}/api/v1/submissions/?apiToken={api_key}&status=3&count=100&searchPhrase={vernacular_title}")
     response_data = response.json()
+    with open('json.txt', 'w') as json_file:
+        json.dump(response_data, json_file, indent=4)  # Use indent for pretty formatting
 
     # Initialize output variables
-    output = None
+    output_en = None
+    output_nl = None
     url_published = None
 
     # Iterate over items in response
@@ -316,16 +339,21 @@ def retrieve_json_info(journaltitle, vernacular_title, api_key):
         for publication in item['publications']:
             title = publication.get('title')
             if vernacular_title == title['nl']:  # Check for matching vernacular title
-                output = title.get('en')  # Get English title
+                fullTitle = publication.get('fullTitle')
+                output_en = fullTitle.get('en')  # Get English title
+                output_nl = fullTitle.get('nl')  #get Dutch title
 
                 # Get the correct urlPublished from the submission level
                 url_published = item.get('urlPublished')  # Retrieve 'urlPublished' at the submission level
 
                 # Once found, return both the English title and the submission-level URL
-                return output, url_published
+                return output_en, output_nl, url_published
+            
+            else:
+                print(f'could not match {title}')
     
     # Return the output and URL (None if not found)
-    return output, url_published
+    return output_en, output_nl, url_published
 
 
 # In[ ]:
@@ -345,12 +373,16 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     vernacular_title = get_vernacular_title(xml_string)
     
     # Retrieve the English title based on the vernacular title and journal title
-    english_title, url_published = retrieve_json_info(journaltitle, vernacular_title, api_key)
+    english_title, dutch_title, url_published = retrieve_json_info(journaltitle, vernacular_title, api_key)
     print(english_title)
+    print(dutch_title)
     print(url_published)
     
     # Add the English article title to the XML
     modified_xml = add_article_title(xml_string, english_title)
+    
+    #replace the vernacular title to include the subtitle
+    modified_xml = replace_vernacular_title(modified_xml, dutch_title)
     
     #replace the journal title with whatever Pubmed requires
     modified_xml = replace_journal_title(modified_xml, journal_abbreviation)
