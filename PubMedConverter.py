@@ -23,6 +23,47 @@ pubmed_user = security.get('pubmed_user')
 pubmed_pass = security.get('pubmed_pass')
 
 
+# In[ ]:
+
+
+def get_english_abstract(url_published):
+    """
+    Fetches and returns the English DC.Description.abstract metadata from an OJS article page.
+
+    Args:
+        url_published (str): The URL of the OJS article.
+
+    Returns:
+        str: The English DC.Description.abstract value, or an empty string if not found.
+    """
+    try:
+        # Send a request to fetch the article page
+        response = requests.get(url_published)
+
+        # Check if the request was successful
+        if response.status_code != 200:
+            print(f"Failed to fetch the page. Status code: {response.status_code}")
+            return ""
+
+        # Parse the page content with BeautifulSoup
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find all DC.Description.abstract meta tags
+        dc_abstracts = soup.find_all("meta", {"name": "DC.Description.abstract"})
+
+        # Extract the content of the English abstract meta tag
+        for abstract in dc_abstracts:
+            if abstract.get("lang") == "en" and abstract.get("content"):
+                return abstract.get("content")
+
+        print("No English DC.Description.abstract metadata found")
+        return ""
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return ""
+
+
 # In[6]:
 
 
@@ -214,6 +255,39 @@ def add_article_id_list(xml_string):
     return ET.tostring(root, encoding='unicode')
 
 
+# In[ ]:
+
+
+def refurbish_abstracts(xml_string, url_published):
+    # Parse the XML string into an ElementTree
+    root = ET.fromstring(xml_string)
+
+    # Get the English abstract from the provided URL or source
+    english_abstract = get_english_abstract(url_published)
+
+    # Find the Dutch abstract node in the XML
+    dutch_abstract_node = root.find(".//Abstract")
+    if dutch_abstract_node is None:
+        raise ValueError("No <Abstract> node found in the XML.")
+
+    # Store the current text of the Dutch abstract
+    dutch_abstract = dutch_abstract_node.text
+
+    # Replace the text of the <Abstract> node with the English abstract
+    dutch_abstract_node.text = english_abstract
+
+    # Create a new <OtherAbstract> node for the Dutch abstract
+    other_abstract_node = ET.Element("OtherAbstract")
+    other_abstract_node.text = dutch_abstract
+
+    # Append the <OtherAbstract> node to the root or its appropriate parent
+    parent = dutch_abstract_node.getparent() if hasattr(dutch_abstract_node, 'getparent') else root
+    parent.append(other_abstract_node)
+
+    # Return the modified XML as a string
+    return ET.tostring(root, encoding='unicode')
+
+
 # In[18]:
 
 
@@ -401,6 +475,8 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     
     #get and add the authorkeywords using beautiful soup
     modified_xml = insert_keywords_after_abstract(modified_xml, keywords)
+    
+    modified_xml = refurbish_abstracts(modified_xml, url_published)
     
     #reorganize the file to comply with the new DTD
     modified_xml = reorganize_article_xml(modified_xml)
