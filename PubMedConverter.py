@@ -288,7 +288,7 @@ def refurbish_abstracts(modified_xml, abstract_en):
 
     if article_node is not None:
         # Create a new <OtherAbstract> node for the Dutch abstract
-        other_abstract_node = ET.Element("OtherAbstract")
+        other_abstract_node = ET.Element("OtherAbstract", attrib={"Language": "NL"})
         other_abstract_node.text = dutch_abstract
 
         # Append the <OtherAbstract> node to the <Article> node
@@ -512,29 +512,52 @@ def rewrite_xml(xml_string, journaltitle, api_key):
 # In[7]:
 
 
-def process_all_xml_files(input_folder, output_folder, journaltitle, api_key):
-    # Create the output folder if it doesn't exist
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
+def process_all_xml_files(input_folder, output_file, journaltitle, api_key):
+    # Create the root element for the combined XML
+    root = ET.Element('ArticleSet')
+    
     # Process each XML file in the input folder
     for filename in os.listdir(input_folder):
         if filename.endswith(".xml"):
             input_path = os.path.join(input_folder, filename)
-            output_path = os.path.join(output_folder, filename)
-
+            
             # Read the input XML file as a string
             with open(input_path, 'r', encoding='utf-8') as file:
                 xml_string = file.read()
-
+            
             # Rewrite the XML string
             modified_xml_string = rewrite_xml(xml_string, journaltitle, api_key)
             
-            modified_xml_string = '<!DOCTYPE ArticleSet PUBLIC "-//NLM//DTD PubMed 2.8//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/in/PubMed.dtd">\n' + modified_xml_string
+            # Parse the modified XML and extract the <Article> node(s)
+            try:
+                article_set = ET.fromstring(modified_xml_string)
+                for article in article_set.findall('Article'):
+                    root.append(article)
+            except ET.ParseError as e:
+                print(f"Error parsing {filename}: {e}", file=sys.stderr)
+    
+    # Convert the combined XML tree into a string
+    combined_xml = ET.tostring(root, encoding='unicode')
+    
+    # Add the DOCTYPE declaration
+    combined_xml_with_doctype = (
+        '<!DOCTYPE ArticleSet PUBLIC "-//NLM//DTD PubMed 2.8//EN" '
+        '"https://dtd.nlm.nih.gov/ncbi/pubmed/in/PubMed.dtd">\n'
+        + combined_xml
+    )
+    
+    # Prettify the XML
+    prettified_xml = prettify_xml(combined_xml_with_doctype)
 
-            # Write the modified XML string to the output file
-            with open(output_path, 'w', encoding='utf-8') as file:
-                file.write(modified_xml_string)
+    # Write the combined XML string to the output file
+    with open(output_file, 'w', encoding='utf-8') as file:
+        file.write(prettified_xml)
+
+
+def prettify_xml(xml_string):
+    """Prettify the XML string for readability."""
+    soup = BeautifulSoup(xml_string, 'xml')
+    return soup.prettify()
 
 
 # In[ ]:
@@ -595,7 +618,7 @@ def reorganize_article_xml(xml_content):
 
 def main():
     journaltitle = journal_title
-    process_all_xml_files('input', 'output', journaltitle, api_key)
+    process_all_xml_files('input', 'articleset.xml', journaltitle, api_key)
 
 
 # In[38]:
