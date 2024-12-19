@@ -26,32 +26,49 @@ pubmed_pass = security.get('pubmed_pass')
 # In[ ]:
 
 
-def get_english_abstract(journaltitle, api_key, pub_id):
-    # Make the API request
-    response = requests.get(
-        f"https://platform.openjournals.nl/{journaltitle}/api/v1/submissions/{pub_id}/publications",
-        params={
-            "apiToken": api_key
-        }
-    )
-    
-    # Parse the response JSON
-    response_data = response.json()
-    
-    with open('id_response.txt', 'w') as json_file:
-        json.dump(response_data, json_file, indent=4)  # Use indent for pretty formatting
 
-    
-    # Iterate through the results to find and return the English abstract
-    for entry in response_data:
-        if "abstract" in entry and "en" in entry["abstract"]:
-            
-            print(entry["abstract"]["en"])
-            
-            return entry["abstract"]["en"]
-    
-    # Return None if no English abstract is found
-    return None
+
+
+# In[7]:
+
+
+def get_english_abstract(url_published):
+    """
+    Fetches and returns the English DC.Description.abstract metadata from an OJS article page.
+
+    Args:
+        url_published (str): The URL of the OJS article.
+
+    Returns:
+        str: The English DC.Description.abstract value, or an empty string if not found.
+    """
+    try:
+        # Send a request to fetch the article page
+        response = requests.get(url_published)
+
+        # Check if the request was successful
+        if response.status_code != 200:
+            print(f"Failed to fetch the page. Status code: {response.status_code}")
+            return ""
+
+        # Parse the page content with BeautifulSoup
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find all DC.Description.abstract meta tags
+        dc_abstracts = soup.find_all("meta", {"name": "DC.Description"})
+
+        # Extract the content of the English abstract meta tag
+        for abstract in dc_abstracts:
+            print(abstract)
+            if abstract.get("xml:lang") == "en" and abstract.get("content"):
+                return abstract.get("content")
+
+        print("No English DC.Description metadata found")
+        return ""
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return ""
 
 
 # In[6]:
@@ -450,7 +467,7 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     print(url_published)
     
     #retrieve English abstract:
-    abstract_en = get_english_abstract(journaltitle, api_key, pub_id)
+    abstract_en = get_english_abstract(url_published)
     
     # Add the English article title to the XML
     modified_xml = add_article_title(xml_string, english_title)
