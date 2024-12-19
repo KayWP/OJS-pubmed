@@ -283,13 +283,18 @@ def refurbish_abstracts(modified_xml, abstract_en):
     # Replace the text of the <Abstract> node with the English abstract
     dutch_abstract_node.text = english_abstract
 
-    # Create a new <OtherAbstract> node for the Dutch abstract
-    other_abstract_node = ET.Element("OtherAbstract")
-    other_abstract_node.text = dutch_abstract
+        # Locate the <Article> node in the XML structure
+    article_node = root.find(".//Article")
 
-    # Append the <OtherAbstract> node to the root or its appropriate parent
-    parent = dutch_abstract_node.getparent() if hasattr(dutch_abstract_node, 'getparent') else root
-    parent.append(other_abstract_node)
+    if article_node is not None:
+        # Create a new <OtherAbstract> node for the Dutch abstract
+        other_abstract_node = ET.Element("OtherAbstract")
+        other_abstract_node.text = dutch_abstract
+
+        # Append the <OtherAbstract> node to the <Article> node
+        article_node.append(other_abstract_node)
+    else:
+        print("Error: <Article> node not found in the XML structure.")
 
     # Return the modified XML as a string
     return ET.tostring(root, encoding='unicode')
