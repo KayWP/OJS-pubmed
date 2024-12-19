@@ -26,42 +26,32 @@ pubmed_pass = security.get('pubmed_pass')
 # In[ ]:
 
 
-def get_english_abstract(url_published):
-    """
-    Fetches and returns the English DC.Description.abstract metadata from an OJS article page.
+def get_english_abstract(journaltitle, api_key, pub_id):
+    # Make the API request
+    response = requests.get(
+        f"https://platform.openjournals.nl/{journaltitle}/api/v1/submissions/{pub_id}/publications",
+        params={
+            "apiToken": api_key
+        }
+    )
+    
+    # Parse the response JSON
+    response_data = response.json()
+    
+    with open('id_response.txt', 'w') as json_file:
+        json.dump(response_data, json_file, indent=4)  # Use indent for pretty formatting
 
-    Args:
-        url_published (str): The URL of the OJS article.
-
-    Returns:
-        str: The English DC.Description.abstract value, or an empty string if not found.
-    """
-    try:
-        # Send a request to fetch the article page
-        response = requests.get(url_published)
-
-        # Check if the request was successful
-        if response.status_code != 200:
-            print(f"Failed to fetch the page. Status code: {response.status_code}")
-            return ""
-
-        # Parse the page content with BeautifulSoup
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        # Find all DC.Description.abstract meta tags
-        dc_abstracts = soup.find_all("meta", {"name": "DC.Description.abstract"})
-
-        # Extract the content of the English abstract meta tag
-        for abstract in dc_abstracts:
-            if abstract.get("lang") == "en" and abstract.get("content"):
-                return abstract.get("content")
-
-        print("No English DC.Description.abstract metadata found")
-        return ""
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return ""
+    
+    # Iterate through the results to find and return the English abstract
+    for entry in response_data:
+        if "abstract" in entry and "en" in entry["abstract"]:
+            
+            print(entry["abstract"]["en"])
+            
+            return entry["abstract"]["en"]
+    
+    # Return None if no English abstract is found
+    return None
 
 
 # In[6]:
@@ -258,12 +248,12 @@ def add_article_id_list(xml_string):
 # In[ ]:
 
 
-def refurbish_abstracts(xml_string, url_published):
+def refurbish_abstracts(modified_xml, abstract_en):
     # Parse the XML string into an ElementTree
-    root = ET.fromstring(xml_string)
+    root = ET.fromstring(modified_xml)
 
     # Get the English abstract from the provided URL or source
-    english_abstract = get_english_abstract(url_published)
+    english_abstract = abstract_en
 
     # Find the Dutch abstract node in the XML
     dutch_abstract_node = root.find(".//Abstract")
@@ -392,10 +382,14 @@ def read_xml_file(file_path):
         return None
 
 
+# In[ ]:
+
+
+
+
+
 # In[1]:
 
-
-import requests
 
 def retrieve_json_info(journaltitle, vernacular_title, api_key):
     response = requests.get(f"https://platform.openjournals.nl/{journaltitle}/api/v1/submissions/?apiToken={api_key}&status=3&count=100&searchPhrase={vernacular_title}")
@@ -419,15 +413,18 @@ def retrieve_json_info(journaltitle, vernacular_title, api_key):
 
                 # Get the correct urlPublished from the submission level
                 url_published = item.get('urlPublished')  # Retrieve 'urlPublished' at the submission level
+                pub_id = item.get('id')
+                #print(pub_id)
 
                 # Once found, return both the English title and the submission-level URL
-                return output_en, output_nl, url_published
+                return output_en, output_nl, url_published, pub_id
             
             else:
-                print(f'could not match {title}')
+                pass
+                #print(f'could not match {title}')
     
     # Return the output and URL (None if not found)
-    return output_en, output_nl, url_published
+    return output_en, output_nl, url_published, pub_id
 
 
 # In[ ]:
@@ -447,10 +444,13 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     vernacular_title = get_vernacular_title(xml_string)
     
     # Retrieve the English title based on the vernacular title and journal title
-    english_title, dutch_title, url_published = retrieve_json_info(journaltitle, vernacular_title, api_key)
+    english_title, dutch_title, url_published, pub_id = retrieve_json_info(journaltitle, vernacular_title, api_key)
     print(english_title)
     print(dutch_title)
     print(url_published)
+    
+    #retrieve English abstract:
+    abstract_en = get_english_abstract(journaltitle, api_key, pub_id)
     
     # Add the English article title to the XML
     modified_xml = add_article_title(xml_string, english_title)
@@ -476,7 +476,7 @@ def rewrite_xml(xml_string, journaltitle, api_key):
     #get and add the authorkeywords using beautiful soup
     modified_xml = insert_keywords_after_abstract(modified_xml, keywords)
     
-    modified_xml = refurbish_abstracts(modified_xml, url_published)
+    modified_xml = refurbish_abstracts(modified_xml, abstract_en)
     
     #reorganize the file to comply with the new DTD
     modified_xml = reorganize_article_xml(modified_xml)

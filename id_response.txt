@@ -1,0 +1,147 @@
+{
+    "itemsMax": 1,
+    "items": [
+        {
+            "_href": "https://tvgg.nl/api/v1/submissions/19094/publications/19109",
+            "authorsString": "Aukelien Scheffelaar, Loreen Loman, Chantal F. Hillebregt",
+            "authorsStringIncludeInBrowse": "Aukelien Scheffelaar, Loreen Loman, Chantal F. Hillebregt",
+            "authorsStringShort": "Scheffelaar e.a.",
+            "categoryIds": [],
+            "coverImage": {
+                "nl": null,
+                "en": null
+            },
+            "crossrefplugin::registeredDoi": null,
+            "crossrefplugin::status": null,
+            "crossrefplugin_batchId": null,
+            "crossrefplugin_failedMsg": null,
+            "crossrefplugin_successMsg": null,
+            "datePublished": "2024-09-25",
+            "doiObject": {
+                "contextId": 36,
+                "crossrefplugin_batchId": "_1729685832",
+                "crossrefplugin_failedMsg": null,
+                "crossrefplugin_successMsg": "The metadata for this item has been deposited with Crossref. To view further details, see the submission in the <a href=\"https://doi.crossref.org/servlet/submissionAdmin?sf=detail&submissionID=1653611445\">Crossref admin panel</a>.",
+                "doi": "10.54195/tgg19094",
+                "id": 14241,
+                "registrationAgency": "CrossrefExportPlugin",
+                "resolvingUrl": "https://doi.org/10.54195/tgg19094",
+                "status": 5
+            },
+            "fullTitle": {
+                "en": "Caring together: Exploring the collaboration with relatives and volunteers from the perspective of care professionals",
+                "nl": "Samen zorgen: Verkenning van de samenwerkingmet naasten en vrijwilligers vanuithet perspectief van zorgprofessionals enzorgaanbieders"
+            },
+            "galleys": [
+                {
+                    "crossrefplugin::registeredDoi": null,
+                    "crossrefplugin::status": null,
+                    "crossrefplugin_batchId": null,
+                    "crossrefplugin_failedMsg": null,
+                    "crossrefplugin_successMsg": null,
+                    "doiObject": null,
+                    "file": {
+                        "_href": "https://tvgg.nl/api/v1/submissions/19094/files/47750",
+                        "assocId": 21359,
+                        "assocType": 521,
+                        "caption": null,
+                        "copyrightOwner": null,
+                        "createdAt": "2024-09-25 16:35:20",
+                        "creator": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "credit": null,
+                        "crossrefplugin::registeredDoi": null,
+                        "crossrefplugin::status": null,
+                        "crossrefplugin_batchId": null,
+                        "crossrefplugin_failedMsg": null,
+                        "crossrefplugin_successMsg": null,
+                        "dateCreated": null,
+                        "dependentFiles": [],
+                        "description": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "documentType": "pdf",
+                        "fileId": 45216,
+                        "fileStage": 10,
+                        "genreId": 432,
+                        "genreIsDependent": false,
+                        "genreIsSupplementary": false,
+                        "genreName": {
+                            "en": "Article Text",
+                            "nl": "Artikeltekst"
+                        },
+                        "id": 47750,
+                        "language": null,
+                        "locale": "nl",
+                        "mimetype": "application/pdf",
+                        "name": {
+                            "en": "",
+                            "nl": "Samen zorgen.pdf"
+                        },
+                        "path": "journals/36/articles/19094/66f41fa80d2c3.pdf",
+                        "publisher": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "revisions": [],
+                        "source": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "sourceSubmissionFileId": null,
+                        "sponsor": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "subject": {
+                            "nl": "",
+                            "en": ""
+                        },
+                        "submissionId": 19094,
+                        "terms": null,
+                        "updatedAt": "2024-09-25 16:35:36",
+                        "uploaderUserId": 9677,
+                        "uploaderUserName": "jsmeenk",
+                        "url": "https://tvgg.nl/$$$call$$$/api/file/file-api/download-file?submissionFileId=47750&submissionId=19094&stageId=5",
+                        "viewable": null
+                    },
+                    "id": 21359,
+                    "isApproved": false,
+                    "label": "PDF",
+                    "locale": "nl",
+                    "pub-id::publisher-id": null,
+                    "publicationId": 19109,
+                    "seq": 0,
+                    "submissionFileId": 47750,
+                    "urlPublished": "https://tvgg.nl/article/view/19094/version/19109/21359",
+                    "urlRemote": null
+                }
+            ],
+            "id": 19109,
+            "locale": "nl",
+            "pages": "2-19",
+            "prefix": {
+                "nl": "",
+                "en": ""
+            },
+            "primaryContactId": 25653,
+            "pub-id::publisher-id": null,
+            "sectionId": 243,
+            "status": 3,
+            "submissionId": 19094,
+            "subtitle": {
+                "en": "Exploring the collaboration with relatives and volunteers from the perspective of care professionals",
+                "nl": "Verkenning van de samenwerkingmet naasten en vrijwilligers vanuithet perspectief van zorgprofessionals enzorgaanbieders"
+            },
+            "title": {
+                "en": "Caring together",
+                "nl": "Samen zorgen"
+            },
+            "urlPublished": "https://tvgg.nl/article/view/19094/version/19109",
+            "version": 1
+        }
+    ]
+}
