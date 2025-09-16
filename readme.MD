@@ -28,8 +28,6 @@ Create a `.env` file in the root directory with the following variables:
 api_key=your_ojs_api_key
 journal_title=your_journal_name
 journal_abbreviation=Journal_Abbreviation
-pubmed_user=your_pubmed_username
-pubmed_pass=your_pubmed_password
 ```
 
 ## Directory Structure
