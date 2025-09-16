@@ -5,10 +5,7 @@
 
 
 from dotenv import dotenv_values
-from bs4 import BeautifulSoup
-
 import xml.etree.ElementTree as ET
-
 import requests
 import json
 import pandas as pd
@@ -19,8 +16,6 @@ security = dotenv_values(".env")
 api_key = security.get('api_key')
 journal_title = security.get('journal_title')
 journal_abbreviation = security.get('journal_abbreviation')
-pubmed_user = security.get('pubmed_user')
-pubmed_pass = security.get('pubmed_pass')
 
 
 # In[ ]:
