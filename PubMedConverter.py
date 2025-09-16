@@ -11,17 +11,13 @@ import json
 import pandas as pd
 import sys
 import os
+from bs4 import BeautifulSoup
+
 
 security = dotenv_values(".env")
 api_key = security.get('api_key')
 journal_title = security.get('journal_title')
 journal_abbreviation = security.get('journal_abbreviation')
-
-
-# In[ ]:
-
-
-
 
 
 # In[7]:
@@ -405,7 +401,7 @@ def read_xml_file(file_path):
 
 
 
-# In[1]:
+# In[2]:
 
 
 def retrieve_json_info(journaltitle, vernacular_title, api_key):
@@ -612,7 +608,7 @@ def reorganize_article_xml(xml_content):
 
 
 def main():
-    journaltitle = journal_title
+    journaltitle = journal_abbreviation
     process_all_xml_files('input', 'articleset.xml', journaltitle, api_key)
 
 
